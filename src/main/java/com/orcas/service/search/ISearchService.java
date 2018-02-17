@@ -1,7 +1,10 @@
 package com.orcas.service.search;
 
 import com.orcas.service.ServiceMultiResult;
+import com.orcas.service.ServiceResult;
 import com.orcas.web.form.RentSearch;
+
+import java.util.List;
 
 /**
  * 检索接口
@@ -27,4 +30,28 @@ public interface ISearchService {
      * @return 回传houseId集合
      */
     ServiceMultiResult<Long> query(RentSearch rentSearch);
+
+    /**
+     * 获取补全建议关键词
+     * @param prefix
+     * @return
+     */
+    ServiceResult<List<String>> suggest(String prefix);
+
+    /**
+     * 聚合特定小区的房间数
+     * @param cityEnName
+     * @param regionEnName
+     * @param district
+     * @return
+     */
+    ServiceResult<Long> aggregateDistrictHouse(String cityEnName, String regionEnName, String district);
+
+    /**
+     * 聚合城市数据
+     * @param cityEnName
+     * @return
+     */
+    ServiceMultiResult<HouseBucketDTO> mapAggregate(String cityEnName);
+
 }

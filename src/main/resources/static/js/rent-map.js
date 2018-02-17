@@ -43,7 +43,7 @@ function load(city, regions, aggData) {
  * @param regionList
  */
 function drawRegion(map, regionList) {
-    var boundary = new BMap.Boundary();
+    var boundary = new BMap.Boundary(); //覆盖物
     var polygonContext = {};
     var regionPoint;
     var textLabel;
@@ -113,7 +113,7 @@ function drawRegion(map, regionList) {
 
         textLabel.addEventListener('mouseover', function (event) {
             var label = event.target;
-            var boundaries = polygonContext[label.getContent()];
+            var boundaries = polygonContext[label.getContent()];  //点阵集合
 
             label.setStyle({backgroundColor: '#1AA591'});
             for (var n = 0; n < boundaries.length; n++) {
@@ -134,7 +134,7 @@ function drawRegion(map, regionList) {
         textLabel.addEventListener('click', function (event) {
             var label = event.target;
             var map = label.getMap();
-            map.zoomIn();
+            map.zoomIn();   //放大地图
             map.panTo(event.point);
         });
     }

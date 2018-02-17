@@ -10,6 +10,8 @@ import com.orcas.service.ServiceMultiResult;
 import com.orcas.service.ServiceResult;
 import com.orcas.service.house.IAddressService;
 import com.orcas.service.house.IHouseService;
+import com.orcas.service.search.HouseBucketDTO;
+import com.orcas.service.search.ISearchService;
 import com.orcas.service.user.IUserService;
 import com.orcas.web.dto.*;
 import com.orcas.web.form.RentSearch;
@@ -39,6 +41,19 @@ public class HouseController {
 
     @Autowired
     private IUserService userService;
+
+    @Autowired
+    private ISearchService searchService;
+
+    @GetMapping("rent/house/autocomplete")
+    @ResponseBody
+    public ApiResponse autocomplete(@RequestParam(value = "prefix") String prefix) {
+        if (prefix.isEmpty()) {
+            return ApiResponse.ofStatus(ApiResponse.Status.BAD_REQUEST);
+        }
+        ServiceResult<List<String>> result = this.searchService.suggest(prefix);
+        return ApiResponse.ofSuccess(result.getResult());
+    }
 
     /**
      * 获取支持城市列表
@@ -180,8 +195,44 @@ public class HouseController {
 
         model.addAttribute("house", houseDTO);
 
-        model.addAttribute("houseCountInDistrict", 0);
+        //聚合
+        ServiceResult<Long> aggResult = searchService.aggregateDistrictHouse(city.getEnName(), region.getEnName(), houseDTO.getDistrict());
+        model.addAttribute("houseCountInDistrict", aggResult.getResult());
+
         return "house-detail";
     }
+
+    /**
+     * 地图找房页面
+     * @param cityEnName 城市名
+     * @param model 页面渲染
+     * @param session 存放城市名等信息
+     * @param redirectAttributes 重定向到首页
+     * @return
+     */
+    @GetMapping("rent/house/map")
+    public String rentMapPage(@RequestParam(value = "cityEnName") String cityEnName,
+                              Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+        ServiceResult<SupportAddressDTO> city = addressService.findCity(cityEnName);
+        if (!city.isSuccess()) {
+            redirectAttributes.addAttribute("msg", "must_choose_one_city");
+            return "redirect:/index";
+        } else {
+            session.setAttribute("cityEnName", cityEnName);
+            model.addAttribute("city", city.getResult());
+        }
+
+        ServiceMultiResult<SupportAddressDTO> regions = addressService.findAllRegionsByCityName(cityEnName);
+
+        ServiceMultiResult<HouseBucketDTO> serviceResult = searchService.mapAggregate(cityEnName);
+
+        model.addAttribute("aggData", serviceResult.getResult());
+        model.addAttribute("total", serviceResult.getTotal());
+        model.addAttribute("regions", regions.getResult());
+
+        return "rent-map";
+    }
+
+
 
 }
