@@ -2,6 +2,8 @@ package com.orcas.web.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import javax.persistence.Column;
+
 /**
  * Created by xcw on 2018/1/23.
  */
@@ -19,6 +21,10 @@ public class SupportAddressDTO {
     private String cnName;
 
     private String level;
+
+    private double baiduMapLongitude;
+
+    private double baiduMapLatitude;
 
     public Long getId() {
         return id;
@@ -58,5 +64,21 @@ public class SupportAddressDTO {
 
     public void setLevel(String level) {
         this.level = level;
+    }
+
+    public double getbaiduMapLongitude() {
+        return baiduMapLongitude;
+    }
+
+    public void setbaiduMapLongitude(double baiduMapLongitude) {
+        this.baiduMapLongitude = baiduMapLongitude;
+    }
+
+    public double getBaiduMapLatitude() {
+        return baiduMapLatitude;
+    }
+
+    public void setBaiduMapLatitude(double baiduMapLatitude) {
+        this.baiduMapLatitude = baiduMapLatitude;
     }
 }

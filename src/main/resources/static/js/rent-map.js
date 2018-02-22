@@ -13,11 +13,16 @@ function load(city, regions, aggData) {
     // 百度地图API功能
     var map = new BMap.Map("allmap", {minZoom: 12}); // 创建实例。设置地图显示最大级别为城市
     var point = new BMap.Point(city.baiduMapLongitude, city.baiduMapLatitude); // 城市中心
+
+  //  alert(city.baiduMapLongitude);
     map.centerAndZoom(point, 12); // 初始化地图，设置中心点坐标及地图级别
 
     map.addControl(new BMap.NavigationControl({enableGeolocation: true})); // 添加比例尺控件
     map.addControl(new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT})); // 左上角
     map.enableScrollWheelZoom(true); // 开启鼠标滚轮缩放
+
+    var localSearch = new BMap.LocalSearch(map);
+    localSearch.enableAutoViewport(); //允许自动调节窗体大小
 
     for (var i = 0; i < aggData.length; i++) {
         regionCountMap[aggData[i].key] = aggData[i].count;
@@ -43,19 +48,23 @@ function load(city, regions, aggData) {
  * @param regionList
  */
 function drawRegion(map, regionList) {
-    var boundary = new BMap.Boundary(); //覆盖物
+    var boundary = new BMap.Boundary();
     var polygonContext = {};
     var regionPoint;
     var textLabel;
     for (var i = 0; i < regionList.length; i++) {
 
+        //获取中心点
         regionPoint = new BMap.Point(regionList[i].baiduMapLongitude, regionList[i].baiduMapLatitude);
+
+     // alert(regionPoint);
 
         var houseCount = 0;
         if (regionList[i].en_name in regionCountMap) {
             houseCount = regionCountMap[regionList[i].en_name];
         }
 
+        //提示文案
         var textContent = '<p style="margin-top: 20px; pointer-events: none">' +
             regionList[i].cn_name + '</p>' + '<p style="pointer-events: none">' +
             houseCount + '套</p>';
@@ -113,7 +122,7 @@ function drawRegion(map, regionList) {
 
         textLabel.addEventListener('mouseover', function (event) {
             var label = event.target;
-            var boundaries = polygonContext[label.getContent()];  //点阵集合
+            var boundaries = polygonContext[label.getContent()];
 
             label.setStyle({backgroundColor: '#1AA591'});
             for (var n = 0; n < boundaries.length; n++) {
@@ -134,7 +143,7 @@ function drawRegion(map, regionList) {
         textLabel.addEventListener('click', function (event) {
             var label = event.target;
             var map = label.getMap();
-            map.zoomIn();   //放大地图
+            map.zoomIn();
             map.panTo(event.point);
         });
     }
@@ -172,7 +181,7 @@ function drawRegion(map, regionList) {
 
         // 搜索信息提示框
         var searchInfoWindow = new BMapLib.SearchInfoWindow(map, content, {
-           title: customPoi.title, // 标题
+            title: customPoi.title, // 标题
             width: 290,
             height: 60,
             panel: "panel", // 搜索结果面板

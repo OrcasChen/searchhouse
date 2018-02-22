@@ -9,14 +9,18 @@ import com.orcas.base.RentValueBlock;
 import com.orcas.entity.House;
 import com.orcas.entity.HouseDetail;
 import com.orcas.entity.HouseTag;
+import com.orcas.entity.SupportAddress;
 import com.orcas.repository.HouseDetailRepository;
 import com.orcas.repository.HouseRepository;
 import com.orcas.repository.HouseTagRepository;
+import com.orcas.repository.SupportAddressRepository;
 import com.orcas.service.ServiceMultiResult;
 import com.orcas.service.ServiceResult;
+import com.orcas.service.house.IAddressService;
 import com.orcas.service.search.HouseIndexKey;
 import com.orcas.service.search.HouseIndexTemplate;
 import com.orcas.service.search.ISearchService;
+import com.orcas.web.form.MapSearch;
 import com.orcas.web.form.RentSearch;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeAction;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequestBuilder;
@@ -26,6 +30,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -84,6 +89,12 @@ public class SearchServiceImpl implements ISearchService {
     private HouseTagRepository houseTagRepository;
 
     @Autowired
+    private SupportAddressRepository supportAddressRepository;
+
+    @Autowired
+    private IAddressService addressService;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
@@ -119,7 +130,7 @@ public class SearchServiceImpl implements ISearchService {
     }
 
     private void createOrUpdateIndex(HouseIndexMessage message) {
-       Long houseId = message.getHouseId();
+        Long houseId = message.getHouseId();
 
         House house = houseRepository.findOne(houseId);
         if (house == null) {
@@ -137,6 +148,18 @@ public class SearchServiceImpl implements ISearchService {
         }
 
         modelMapper.map(detail, indexTemplate);
+
+        //baidu map
+        SupportAddress city = supportAddressRepository.findByEnNameAndLevel(house.getCityEnName(), SupportAddress.Level.CITY.getValue());
+        SupportAddress region = supportAddressRepository.findByEnNameAndLevel(house.getRegionEnName(), SupportAddress.Level.REGION.getValue());
+        String address = city.getCnName() + region.getCnName() + house.getStreet() + house.getDistrict() + detail.getDetailAddress();
+
+        ServiceResult<BaiduMapLocation> location = addressService.getBaiduMapLocation(city.getCnName(), address);
+        if (!location.isSuccess()) {
+            this.index(message.getHouseId(), message.getRetry() + 1);
+            return;
+        }
+        indexTemplate.setLocation(location.getResult());
 
         List<HouseTag> tags = houseTagRepository.findAllByHouseId(houseId);
         if (tags != null && !tags.isEmpty()) {
@@ -465,6 +488,66 @@ public class SearchServiceImpl implements ISearchService {
         }
 
         return new ServiceMultiResult<>(response.getHits().getTotalHits(), buckets);
+    }
+
+    @Override
+    public ServiceMultiResult<Long> mapQuery(String cityEnName, String orderBy, String orderDirection, int start, int size) {
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        boolQuery.filter(QueryBuilders.termQuery(HouseIndexKey.CITY_EN_NAME, cityEnName));
+
+        SearchRequestBuilder searchRequestBuilder = this.esClient.prepareSearch(INDEX_NAME)
+                .setTypes(INDEX_TYPE)
+                .setQuery(boolQuery)
+                .addSort(HouseSort.getSortKey(orderBy), SortOrder.fromString(orderDirection))
+                .setFrom(start)    //分页
+                .setSize(size);
+
+        List<Long> houseIds = new ArrayList<>();
+        SearchResponse response = searchRequestBuilder.get();
+        if (response.status() != RestStatus.OK) {
+            logger.warn("Search status is not ok for " + searchRequestBuilder);
+            return new ServiceMultiResult<>(0, houseIds);
+        }
+
+        for (SearchHit hit : response.getHits()) {
+            houseIds.add(Longs.tryParse(String.valueOf(hit.getSource().get(HouseIndexKey.HOUSE_ID))));
+        }
+        return new ServiceMultiResult<>(response.getHits().getTotalHits(), houseIds);
+    }
+
+    @Override
+    public ServiceMultiResult<Long> mapQuery(MapSearch mapSearch) {
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        boolQuery.filter(QueryBuilders.termQuery(HouseIndexKey.CITY_EN_NAME, mapSearch.getCityEnName()));
+
+        //具体范围
+        boolQuery.filter(
+                QueryBuilders.geoBoundingBoxQuery("location")
+                   .setCorners(                 //设置边角
+                       new GeoPoint(mapSearch.getLeftLatitude(), mapSearch.getLeftLongitude()),
+                       new GeoPoint(mapSearch.getRightLatitude(), mapSearch.getRightLongitude())
+                   )
+        );
+
+        SearchRequestBuilder builder = this.esClient.prepareSearch(INDEX_NAME)
+                .setTypes(INDEX_TYPE)
+                .setQuery(boolQuery)
+                .addSort(HouseSort.getSortKey(mapSearch.getOrderBy()), SortOrder.fromString(mapSearch.getOrderDirection()))
+                .setFrom(mapSearch.getStart())
+                .setSize(mapSearch.getSize());
+
+        List<Long> houseIds = new ArrayList<>();
+        SearchResponse response = builder.get();
+        if (RestStatus.OK != response.status()) {
+            logger.warn("Search status is not ok for " + builder);
+            return new ServiceMultiResult<>(0, houseIds);
+        }
+
+        for (SearchHit hit : response.getHits()) {
+            houseIds.add(Longs.tryParse(String.valueOf(hit.getSource().get(HouseIndexKey.HOUSE_ID))));
+        }
+
+        return new ServiceMultiResult<>(response.getHits().getTotalHits(), houseIds);
     }
 
     /**

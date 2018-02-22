@@ -51,6 +51,11 @@ public class HouseIndexTemplate {
 
     private List<HouseSuggest> suggest;
 
+    private BaiduMapLocation location;
+
+
+
+    //getter and setter
     public List<HouseSuggest> getSuggest() {
         return suggest;
     }
@@ -217,5 +222,13 @@ public class HouseIndexTemplate {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    public BaiduMapLocation getLocation() {
+        return location;
+    }
+
+    public void setLocation(BaiduMapLocation location) {
+        this.location = location;
     }
 }

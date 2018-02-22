@@ -72,11 +72,11 @@ public class SupportAddress {
         this.level = level;
     }
 
-    public double getBaiduMapLongitude() {
+    public double getbaiduMapLongitude() {
         return baiduMapLongitude;
     }
 
-    public void setBaiduMapLongitude(double baiduMapLongitude) {
+    public void setbaiduMapLongitude(double baiduMapLongitude) {
         this.baiduMapLongitude = baiduMapLongitude;
     }
 

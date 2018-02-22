@@ -119,13 +119,13 @@ var BMapLib = window.BMapLib = BMapLib || {};
                 return;
             }
             this._map = map;
-            this._markers = [];//所有的点位
-            this._clusters = [];//聚合的数组
+            this._markers = [];
+            this._clusters = [];
 
             var opts = options || {};
             this._gridSize = opts["gridSize"] || 60;
             this._maxZoom = opts["maxZoom"] || 18;
-            this._minClusterSize = opts["minClusterSize"] || 1;
+            this._minClusterSize = opts["minClusterSize"] || 2;
             this._isAverageCenter = false;
             if (opts['isAverageCenter'] != undefined) {
                 this._isAverageCenter = opts['isAverageCenter'];
@@ -140,6 +140,9 @@ var BMapLib = window.BMapLib = BMapLib || {};
             this._map.addEventListener("moveend",function(){
                 that._redraw();
             });
+
+
+
 
             var mkrs = opts["markers"];
             isArray(mkrs) && this.addMarkers(mkrs);
@@ -216,10 +219,10 @@ var BMapLib = window.BMapLib = BMapLib || {};
                 }
             }
         }
+
         if (clusterToAddTo && clusterToAddTo.isMarkerInClusterBounds(marker)){
             clusterToAddTo.addMarker(marker);
         } else {
-            //单个标记
             var cluster = new Cluster(this);
             cluster.addMarker(marker);
             this._clusters.push(cluster);
@@ -255,7 +258,9 @@ var BMapLib = window.BMapLib = BMapLib || {};
     MarkerClusterer.prototype._removeMarkersFromMap = function(){
         for(var i = 0, marker; marker = this._markers[i]; i++){
             marker.isInCluster = false;
+            tmplabel = marker.getLabel();
             this._map.removeOverlay(marker);
+            marker.setLabel(tmplabel);
         }
     };
 
@@ -270,7 +275,9 @@ var BMapLib = window.BMapLib = BMapLib || {};
         if (index === -1) {
             return false;
         }
+        tmplabel = marker.getLabel();
         this._map.removeOverlay(marker);
+        marker.setLabel(tmplabel);
         this._markers.splice(index, 1);
         return true;
     };
@@ -326,7 +333,6 @@ var BMapLib = window.BMapLib = BMapLib || {};
      */
     MarkerClusterer.prototype._redraw = function () {
         this._clearLastClusters();
-        //this._map.clearOverlays();
         this._createClusters();
     };
 
@@ -454,9 +460,8 @@ var BMapLib = window.BMapLib = BMapLib || {};
         this._markers = [];//这个Cluster中所包含的markers
         this._gridBounds = null;//以中心点为准，向四边扩大gridSize个像素的范围，也即网格范围
         this._isReal = false; //真的是个聚合
-        this._styles = markerClusterer.getStyles();
-        this._labels = [];
-        this._clusterMarker = new BMapLib.TextIconOverlay(this._center, {name:'共找到',value : this._markers.length}, {"styles":this._markerClusterer.getStyles()});
+
+        this._clusterMarker = new BMapLib.TextIconOverlay(this._center, this._markers.length, {"styles":this._markerClusterer.getStyles()});
         //this._map.addOverlay(this._clusterMarker);
     }
 
@@ -493,7 +498,9 @@ var BMapLib = window.BMapLib = BMapLib || {};
             return true;
         } else if (len === this._minClusterSize) {
             for (var i = 0; i < len; i++) {
+                tmplabel = this._markers[i].getLabel();
                 this._markers[i].getMap() && this._map.removeOverlay(this._markers[i]);
+                this._markers[i].setLabel(tmplabel);
             }
 
         }
@@ -544,28 +551,6 @@ var BMapLib = window.BMapLib = BMapLib || {};
     };
 
     /**
-     * 对于单个点添加label
-     */
-    Cluster.prototype.addLabel = function (marker) {
-        //获取marker的坐标
-        var position = marker.getPosition();
-        //创建label
-        var label = new BMap.Label({position : position});
-        label.setStyle({
-            height : '25px',
-            color : "#fff",
-            backgroundColor : this._styles[0].backgroundColor,
-            border : 'none',
-            borderRadius : "25px",
-            fontWeight : 'bold',
-        });
-        var content = '<span style="color:'+this._styles[0].backgroundColor+'"><i class="fa fa-map-marker"></i></span>'+'<p style="padding:0px 13px;text-align:center;margin-top:5px;">哈哈这是一sssssssssssssss个点</p>';
-        label.setContent(content)
-        label.setPosition(position);
-        this._labels.push(label);
-        this._map.addOverlay(label);
-    }
-    /**
      * 更新该聚合的显示样式，也即TextIconOverlay。
      * @return 无返回值。
      */
@@ -573,8 +558,7 @@ var BMapLib = window.BMapLib = BMapLib || {};
         if (this._map.getZoom() > this._markerClusterer.getMaxZoom()) {
             this._clusterMarker && this._map.removeOverlay(this._clusterMarker);
             for (var i = 0, marker; marker = this._markers[i]; i++) {
-                //this._map.addOverlay(marker);
-                this.addLabel(marker);
+                this._map.addOverlay(marker);
             }
             return;
         }
@@ -586,19 +570,12 @@ var BMapLib = window.BMapLib = BMapLib || {};
 
         this._clusterMarker.setPosition(this._center);
 
-        this._clusterMarker.setText({name : '共找到' , value : this._markers.length});
+        this._clusterMarker.setText(this._markers.length);
 
         var thatMap = this._map;
         var thatBounds = this.getBounds();
-        var center = this._center;
         this._clusterMarker.addEventListener("click", function(event){
-            //这个方法容易造成晃动
-            //thatMap.setViewport(thatBounds);
-            //console.log(center);
-            var zoom = thatMap.getZoom();
-            zoom = zoom > 14 ? zoom : 14;
-            thatMap.setZoom(zoom);
-            thatMap.setCenter(center);
+            thatMap.setViewport(thatBounds);
         });
 
     };
@@ -608,10 +585,12 @@ var BMapLib = window.BMapLib = BMapLib || {};
      * @return 无返回值。
      */
     Cluster.prototype.remove = function(){
-        for (var i = 0, m; m = this._labels[i]; i++) {
-            this._map.removeOverlay(m);
-        }//清除散的标记点
+        for (var i = 0, m; m = this._markers[i]; i++) {
+            var tmplabel = this._markers[i].getLabel();
+            this._markers[i].getMap() && this._map.removeOverlay(this._markers[i]);
+            this._markers[i].setLabel(tmplabel);
 
+        }//清除散的标记点
         this._map.removeOverlay(this._clusterMarker);
         this._markers.length = 0;
         delete this._markers;

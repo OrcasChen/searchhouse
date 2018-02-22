@@ -1,7 +1,7 @@
 .left-region {
     height: 620px;
     float: left;
-    width: 376px;
+    width: 35%;
 }
 
 .left-region .r-hd {
@@ -376,7 +376,7 @@
 
 
 #allmap {
-    width: 900px;
+    width: 65%;
     height: 620px;
     overflow: hidden;
     margin: 0;
