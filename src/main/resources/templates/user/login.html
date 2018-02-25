@@ -130,7 +130,7 @@
 
                 var smsCode = $('.login-form form').find('input[name="smsCode"]').val();
                 if (smsCode.length !== 6) {
-                    layer.msg('请输入4位验证码', {icon: 5, time: 2000});
+                    layer.msg('请输入6位验证码', {icon: 5, time: 2000});
                     return false;
                 }
             } else {
@@ -162,8 +162,9 @@
             $(this).attr('readonly', 'readonly');
 
             $.ajax({
-                url: '/sms/code?telephone=' + telephone,
+                url: "/sms/code?telephone=" + telephone,
                 type: 'GET',
+                dataType : "json",
                 success: function (data) {
                     if (data.code === 200) {
                         var smsBtn = $('#smsCodeBtn');

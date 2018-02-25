@@ -13,4 +13,18 @@ public interface IUserService {
     User findUserByName(String userName);
 
     ServiceResult<UserDTO> findById(Long userId);
+
+    /**
+     * 根据手机号码寻找用户
+     * @param telephone
+     * @return
+     */
+    User findUserByTelephone(String telephone);
+
+    /**
+     * 通过手机号注册用户
+     * @param telephone
+     * @return
+     */
+    User addUserByPhone(String telephone);
 }

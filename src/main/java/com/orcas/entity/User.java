@@ -41,6 +41,7 @@ public class User implements UserDetails{
 
     private String avatar;
 
+
     public Long getId() {
         return id;
     }

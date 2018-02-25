@@ -1,15 +1,18 @@
 package com.orcas.config;
 
+import com.orcas.security.AuthFilter;
 import com.orcas.security.AuthProvider;
 import com.orcas.security.LoginAuthFailHandler;
 import com.orcas.security.LoginUrlEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * Created by xcw on 2018/1/22.
@@ -25,6 +28,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+
+        http.addFilterBefore(authFilter(), UsernamePasswordAuthenticationFilter.class);
+
         //资源访问权限
         http.authorizeRequests().antMatchers("/admin/login").permitAll()    //管理员登录入口
                                 .antMatchers("/static/**").permitAll()      //静态资源
@@ -74,4 +80,24 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
         return new LoginAuthFailHandler(urlEntryPoint());
     }
 
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        AuthenticationManager authenticationManager = null;
+        try {
+            authenticationManager = super.authenticationManager();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return  authenticationManager;
+    }
+
+    @Bean
+    public AuthFilter authFilter() {
+        AuthFilter authFilter = new AuthFilter();
+        authFilter.setAuthenticationManager(authenticationManager());
+        authFilter.setAuthenticationFailureHandler(authFailHandler());
+
+        return authFilter;
+    }
 }
