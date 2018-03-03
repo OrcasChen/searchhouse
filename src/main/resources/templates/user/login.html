@@ -152,7 +152,7 @@
 
         $('#smsCodeBtn').on('click', function () {
             var telephone = $('.login-form form').find('input[name="telephone"]').val(),
-                phonePattern = /^((13[0-9])|(14[5|7])|(15([0-3]|[5-9]))|(18[0,5-9]))\d{8}$/;
+                phonePattern = /^((13[0-9])|(14[5|7])|(15([0-3]|[5-9]))|(18([0,2-3]|[5-9])))\d{8}$/;
             var n = telephone.search(phonePattern);
             if (n < 0) {
                 layer.msg('请输入正确的手机号', {icon: 5, time: 2000});

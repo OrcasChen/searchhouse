@@ -1,6 +1,7 @@
 package com.orcas.service.user;
 
 import com.google.common.collect.Lists;
+import com.orcas.base.LoginUserUtil;
 import com.orcas.entity.Role;
 import com.orcas.entity.User;
 import com.orcas.repository.RoleRepository;
@@ -10,6 +11,7 @@ import com.orcas.web.dto.UserDTO;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.encoding.Md5PasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,8 @@ public class UserServiceImpl implements IUserService{
 
     @Autowired
     private ModelMapper modelMapper;
+
+    private final Md5PasswordEncoder passwordEncoder = new Md5PasswordEncoder();
 
     @Override
     public User findUserByName(String userName) {
@@ -102,6 +106,29 @@ public class UserServiceImpl implements IUserService{
         user.setAuthorityList(Lists.newArrayList(new SimpleGrantedAuthority("ROLE_USER")));
 
         return user;
+    }
+
+    @Override
+    @Transactional
+    public ServiceResult modifyUserProfile(String profile, String value) {
+        Long userId = LoginUserUtil.getLoginUserId();
+        if (profile == null || profile.isEmpty()) {
+            return new ServiceResult(false, "属性不能为空！");
+        }
+        switch (profile) {
+            case "name":
+                userRepository.updateUsername(userId, value);
+                break;
+            case "email":
+                userRepository.updateEmail(userId, value);
+                break;
+            case "password":
+                userRepository.updatePassword(userId, this.passwordEncoder.encodePassword(value, userId));
+                break;
+            default:
+                return new ServiceResult(false, "不支持的属性");
+        }
+        return ServiceResult.success();
     }
 
 

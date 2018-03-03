@@ -12,12 +12,14 @@ import com.orcas.service.ServiceResult;
 import com.orcas.service.house.IAddressService;
 import com.orcas.service.house.IHouseService;
 import com.orcas.service.house.IQiNiuService;
+import com.orcas.service.user.IUserService;
 import com.orcas.web.dto.*;
 import com.orcas.web.form.DatatableSearch;
 import com.orcas.web.form.HouseForm;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -46,6 +48,9 @@ public class AdminController {
 
     @Autowired
     private IHouseService houseService;
+
+    @Autowired
+    private IUserService userService;
 
     @Autowired
     private Gson gson;
@@ -341,4 +346,79 @@ public class AdminController {
 
         return ApiResponse.ofMessage(HttpStatus.BAD_REQUEST.value(), result.getMessage());
     }
+
+    @GetMapping("/house/subscribe")
+    public String houseSubscribe() {
+        return "admin/subscribe";
+    }
+
+    /**
+     * 预约管理列表
+     * @param draw dataTable
+     * @param start
+     * @param size
+     * @return
+     */
+    @GetMapping("/house/subscribe/list")
+    @ResponseBody
+    public ApiResponse subscribeList(@RequestParam(value = "draw") int draw,
+                                     @RequestParam(value = "start") int start,
+                                     @RequestParam(value = "length") int size) {
+        ServiceMultiResult<Pair<HouseDTO, HouseSubscribeDTO>> result = houseService.findSubscribeList(start, size);
+
+        ApiDataTableResponse response = new ApiDataTableResponse(ApiResponse.Status.SUCCESS);
+        response.setData(result.getResult());
+        response.setDraw(draw);
+        response.setRecordsFiltered(result.getTotal());
+        response.setRecordsTotal(result.getTotal());
+
+        return response;
+    }
+
+    /**
+     * 查看预约房屋的用户信息
+     * @param userId
+     * @return
+     */
+    @GetMapping("/user/{userId}")
+    @ResponseBody
+    public ApiResponse getUserInfo(@PathVariable(value = "userId") Long userId) {
+        if (userId == null || userId < 1) {
+            return ApiResponse.ofStatus(ApiResponse.Status.BAD_REQUEST);
+        }
+
+        ServiceResult<UserDTO> serviceResult = userService.findById(userId);
+
+        // 管理员预约中显示的为预约时填写的号码，不是用户手机号
+        //String telephone = houseService.findSubscribeTelephone(userId, houseId);
+        //serviceResult.getResult().setPhoneNumber(telephone);
+
+        if (!serviceResult.isSuccess()) {  // 查无此用户
+            return ApiResponse.ofStatus(ApiResponse.Status.NOT_FOUND);
+        } else {
+            return ApiResponse.ofSuccess(serviceResult.getResult());
+        }
+    }
+
+
+    /**
+     * 完成预约
+     * @param houseId
+     * @return
+     */
+    @PostMapping("finish/subscribe")
+    @ResponseBody
+    public ApiResponse finishSubscribe(@RequestParam(value = "house_id") Long houseId, @RequestParam(value = "userId") Long userId) {
+        if (houseId < 1 || userId < 1) {
+            return ApiResponse.ofStatus(ApiResponse.Status.BAD_REQUEST);
+        }
+
+        ServiceResult result = houseService.finishSubscribe(houseId, userId);
+        if (result.isSuccess()) {
+            return ApiResponse.ofSuccess("");
+        }
+
+        return ApiResponse.ofMessage(ApiResponse.Status.BAD_REQUEST.getCode(), result.getMessage());
+    }
+
 }

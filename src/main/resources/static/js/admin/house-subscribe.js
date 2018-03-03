@@ -76,7 +76,7 @@ var table = $('#data-table').DataTable({
             targets: 2,
             render: function (data, type, row, meta) {
                 return '<td><img onClick="house_edit(\'查看\', \'/house/show?id=' + row.first.id + '\')" title="查看"' +
-                    ' class="picture-thumb" src="http://7xo6gy.com1.z0.glb.clouddn.com/' + data + '?imageView2/1/w/200/h/100"></td>';
+                    ' class="picture-thumb" src="http://p2ywm466j.bkt.clouddn.com/' + data + '?imageView2/1/w/200/h/100"></td>';
             }
         }, {
             targets: 7,
@@ -86,13 +86,13 @@ var table = $('#data-table').DataTable({
         }, {
             targets: 8,
             render: function (data, type, row, meta) {
-                return '<a style="text-decoration: underline" onclick="userTip(' + row.second.userId + ')">查看用户信息</a>'
+                return '<a style="text-decoration: underline" onclick="userTip(' + row.second.userId + ', ' + row.second.telephone + ')">查看用户信息</a>'
             }
         }, {
             targets: 9,
             render: function (data, type, row, meta) {
                 return '<td class="f-14 td-manage"><a style="text-decoration:none" class="ml-5"' +
-                    ' onClick="finishSubscribe(this,' + row.first.id + ')" href="javascript:;"' +
+                    ' onClick="finishSubscribe(this,' + row.first.id + ', ' + row.second.userId + ')" href="javascript:;"' +
                     ' title="带看完成"><i class="Hui-iconfont">&#xe603;</i></a></td>';
             }
         }],
@@ -115,7 +115,7 @@ function reloadTable() {
     table.ajax.reload(null, false);
 }
 
-function userTip(userId) {
+function userTip(userId, telephone) {
     $.get('/admin/user/' + userId, function (res) {
         layer.open({
             type: 1,
@@ -127,18 +127,19 @@ function userTip(userId) {
             btn: ['Close'],
             moveType: 1, //拖拽模式，0或者1
             content: '<div style="padding: 50px; line-height: 22px; background-color: #393D49; color: #fff;' +
-            ' font-weight: 300;">用户名：' + res.data.name + '<br>联系电话：' + res.data.phoneNumber + '</div>'
+            ' font-weight: 300;">用户名：' + res.data.name + '<br>联系电话：' + telephone + '</div>'
         });
     });
 }
 
-function finishSubscribe(obj, id) {
+function finishSubscribe(obj, id, userId) {
     layer.confirm('确认完成客户带看了吗？', function () {
         $.ajax({
             type: 'POST',
             url: '/admin/finish/subscribe',
             data: {
-                house_id: id
+                house_id: id,
+                userId: userId
             },
             success: function (data) {
                 if (data.code === 200) {

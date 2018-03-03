@@ -158,6 +158,15 @@
 			<version>2.7</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.16.20</version>
+			<scope>provided</scope>
+		</dependency>
+
+
 		<!-- Kafka -->
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
@@ -169,15 +178,26 @@
 			<groupId>com.aliyun</groupId>
 			<artifactId>aliyun-java-sdk-core</artifactId>
 			<version>3.3.1</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/aliyun-java-sdk-core-3.3.1.jar</systemPath>
+		<!--	<scope>system</scope>
+			<systemPath>${project.basedir}/lib/aliyun-java-sdk-core-3.3.1.jar</systemPath>-->
 		</dependency>
 		<dependency>
 			<groupId>com.aliyun</groupId>
 			<artifactId>aliyun-java-sdk-dysmsapi</artifactId>
 			<version>1.0.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/aliyun-java-sdk-dysmsapi-1.0.0.jar</systemPath>
+		<!--	<scope>system</scope>
+			<systemPath>${project.basedir}/lib/aliyun-java-sdk-dysmsapi-1.0.0.jar</systemPath>-->
+		</dependency>
+
+		<!-- mail -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
 		</dependency>
 
 	</dependencies>
@@ -187,12 +207,63 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>com.orcas.SearchhouseProjectApplication</mainClass>
+					<executable>true</executable>
+				</configuration>
 			<!--	<configuration>
                         <jvmArguments>
                             -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8088
                         </jvmArguments>
 				</configuration>  -->
 			</plugin>
+
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.7.7.201606060606</version>
+				<executions>
+					<execution>
+						<id>default-prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>default-report</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>default-check</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<rule>
+									<element>CLASS</element>
+									<includes>
+										<include>com.orcas.service.*.*</include>
+										<include>com.orcas.repository.*</include>
+									</includes>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.00</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 	</build>
 

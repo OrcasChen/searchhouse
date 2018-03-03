@@ -1,10 +1,7 @@
 package com.orcas.web.controller.house;
 
-import ch.qos.logback.core.net.SyslogOutputStream;
 import com.orcas.base.ApiResponse;
-import com.orcas.base.HouseStatus;
 import com.orcas.base.RentValueBlock;
-import com.orcas.entity.HouseDetail;
 import com.orcas.entity.SupportAddress;
 import com.orcas.service.ServiceMultiResult;
 import com.orcas.service.ServiceResult;
@@ -257,6 +254,5 @@ public class HouseController {
 
         return response;
     }
-
 
 }

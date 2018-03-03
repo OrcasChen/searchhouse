@@ -1,12 +1,17 @@
 package com.orcas.service.house;
 
+import com.orcas.base.HouseSubscribeStatus;
 import com.orcas.service.ServiceMultiResult;
 import com.orcas.service.ServiceResult;
 import com.orcas.web.dto.HouseDTO;
+import com.orcas.web.dto.HouseSubscribeDTO;
 import com.orcas.web.form.DatatableSearch;
 import com.orcas.web.form.HouseForm;
 import com.orcas.web.form.MapSearch;
 import com.orcas.web.form.RentSearch;
+import org.springframework.data.util.Pair;
+
+import java.util.Date;
 
 /**
  * 房屋管理服务接口
@@ -86,4 +91,53 @@ public interface IHouseService {
      * @return
      */
     ServiceMultiResult<HouseDTO> boundMapQuery(MapSearch mapSearch);
+
+    /**
+     * 加入预约清单
+     * @param houseId
+     * @return
+     */
+    ServiceResult addSubscribeOrder(Long houseId);
+
+    /**
+     * 获取对应状态的预约列表   (两元素元组)
+     * @param status
+     * @param start
+     * @param size
+     * @return
+     */
+    ServiceMultiResult<Pair<HouseDTO, HouseSubscribeDTO>> querySubscribeList(HouseSubscribeStatus status, int start, int size);
+
+    /**
+     * 预约看房实现
+     * @param houseId
+     * @param orderTime
+     * @param desc
+     * @param telephone
+     * @return
+     */
+    ServiceResult subscribe(Long houseId, Date orderTime, String desc, String telephone);
+
+    /**
+     * 取消预约
+     * @param houseId
+     * @return
+     */
+    ServiceResult cancelSubscribe(Long houseId);
+
+    /**
+     * 管理员查询预约信息接口
+     * @param start
+     * @param size
+     * @return
+     */
+    ServiceMultiResult<Pair<HouseDTO,HouseSubscribeDTO>> findSubscribeList(int start, int size);
+
+    /**
+     * 完成预约
+     * @param houseId
+     * @param userId
+     * @return
+     */
+    ServiceResult finishSubscribe(Long houseId, Long userId);
 }

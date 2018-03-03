@@ -354,12 +354,12 @@ public class SearchServiceImpl implements ISearchService {
 
 
         // 增加房屋title的权重
-        boolQuery.should(QueryBuilders.matchQuery(
+        boolQuery.must(QueryBuilders.matchQuery(
                 HouseIndexKey.TITLE, rentSearch.getKeywords())
                 .boost(2.0f)
         );
 
-        boolQuery.should(
+        boolQuery.must(
                 QueryBuilders.multiMatchQuery(rentSearch.getKeywords(),
                         HouseIndexKey.TRAFFIC,
                         HouseIndexKey.DISTRICT,

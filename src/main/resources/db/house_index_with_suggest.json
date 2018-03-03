@@ -1,10 +1,19 @@
 {
   "settings": {
-    "number_of_replicas": 0
+    "number_of_replicas": 0,
+    "number_of_shards": 5,
+    "index.store.type": "niofs",  // 索引读写优化
+    "index.query.default_field": "title",
+    "index.unassigned.node_left.delayed_timeout": "5m"   // 索引未指定的节点延迟操作时间
   },
+
   "mappings": {
     "house": {
-      "dynamic": false,
+      "dynamic": "strict",
+      "_all": {
+        "enabled": false    // 禁止所有字段都被索引做分词
+      },
+
       "properties": {
         "houseId": {
           "type": "long"
